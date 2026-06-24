@@ -552,8 +552,6 @@ pytest tests/
 
 ```bash
 python ai_contribute_bot.py search \
-  --keywords "good first issue" "help wanted" \
-  --labels good-first-issue,help-wanted \
   --max-results 10
 ```
 

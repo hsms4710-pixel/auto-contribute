@@ -31,13 +31,12 @@ class IssueSelector:
         self.repo = repo
         self.owner, self.repo_name = repo.split("/")
     
-    def find_good_first_issues(self, limit: int = 10) -> List[Dict]:
-        print(f"🔍 Scanning {self.repo} for good first issues...")
+    def find_contributable_issues(self, limit: int = 10) -> List[Dict]:
+        print(f"🔍 Scanning {self.repo} for contributable issues...")
         url = f"{GITHUB_API}/repos/{self.repo}/issues"
         headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
         params = {
             "state": "open",
-            "labels": "good first issue",
             "per_page": limit * 2,
         }
         try:
@@ -66,12 +65,12 @@ class IssueSelector:
     def _score_issue(self, issue: Dict) -> int:
         score = 50
         labels = [l["name"] for l in issue["labels"]]
-        if "good first issue" in labels:
-            score += 30
-        if "help wanted" in labels:
-            score += 20
         if "bug" in labels:
             score += 20
+        if "enhancement" in labels:
+            score += 15
+        if "documentation" in labels:
+            score += 10
         if len(issue["body"] or "") < 100:
             score -= 20
         return min(score, 100)

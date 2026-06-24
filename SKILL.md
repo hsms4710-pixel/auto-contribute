@@ -125,7 +125,7 @@ This includes:
 1. Use GitHub MCP connector or `gh` CLI to search issues
 2. Filter criteria:
    - Issue is open and not assigned
-   - Issue has labels like `good first issue`, `help wanted`, `bug`
+   - Issue is actionable (clear description, reproducible bug, or well-defined feature request)
    - Issue is recent (within last 30 days)
    - Issue description is clear and actionable
 3. Prioritize issues that match user's expertise (Python, TypeScript, etc.)
@@ -601,6 +601,268 @@ python ai_contribute_bot.py validate --repo-path ~/repos/autogen --package autog
 # Submit PR (after approval)
 python ai_contribute_bot.py submit --pr-file ~/.pr/XXXX.md
 ```
+
+
+---
+
+## Local Test Project Directory Configuration
+
+### Purpose
+
+When contributing to open-source projects, you need a local directory to clone repositories, set up development environments, and test modifications. This section defines the default local test project directory and its usage.
+
+---
+
+### Default Directory
+
+**Default path**: `~/Desktop/personal-homepage/pr-projects/`
+
+This directory is used to store all open-source project repositories that you are contributing to.
+
+**Why this location**:
+- ✅ Easy to find (on Desktop)
+- ✅ Isolated from your personal projects
+- ✅ Can be easily cleaned up when no longer needed
+
+---
+
+### Directory Structure
+
+After cloning and setting up projects, the directory structure should look like this:
+
+```
+~/Desktop/personal-homepage/pr-projects/
+├── hermes-agent/              # Example project 1
+│   ├── .git/
+│   ├── apps/
+│   ├── package.json
+│   └── ... (project files)
+├── autogen/                   # Example project 2
+│   ├── .git/
+│   ├── autogen/
+│   ├── setup.py
+│   └── ... (project files)
+└── ... (more projects)
+```
+
+---
+
+### Configuration
+
+#### Method 1: Use default directory (recommended)
+
+No configuration needed. The skill will automatically use `~/Desktop/personal-homepage/pr-projects/` as the local test directory.
+
+#### Method 2: Custom directory
+
+If you want to use a different directory, set the environment variable in `~/.zshrc`:
+
+```bash
+# Add to ~/.zshrc
+export PR_PROJECTS_DIR="$HOME/Desktop/personal-homepage/pr-projects"
+```
+
+Then reload the configuration:
+
+```bash
+```
+
+---
+
+### Usage in Automation Tasks
+
+When the automation task runs, it will:
+
+1. **Check if the directory exists**
+   ```bash
+   if [ ! -d "$PR_PROJECTS_DIR" ]; then
+     mkdir -p "$PR_PROJECTS_DIR"
+   fi
+   ```
+
+2. **Clone the repository**
+   ```bash
+   cd "$PR_PROJECTS_DIR"
+   git clone https://github.com/owner/repo.git
+   ```
+
+3. **Set up development environment**
+   ```bash
+   cd "$PR_PROJECTS_DIR/repo"
+   npm install  # or pip install -e ".[dev]"
+   ```
+
+4. **Create a branch and implement changes**
+   ```bash
+   git checkout -b fix/issue-description
+   # ... make changes ...
+   ```
+
+5. **Test the changes**
+   ```bash
+   npm run test  # or pytest
+   ```
+
+6. **Ask user to manually test**
+   - For GUI apps: Launch the app and verify
+   - For CLI tools: Run the command and verify output
+
+---
+
+### Best Practices
+
+#### 1. Clean up old projects regularly
+
+After a PR is merged or closed, you can delete the local clone to save disk space:
+
+```bash
+# Delete a specific project
+rm -rf "$PR_PROJECTS_DIR/repo-name"
+
+# List all projects and their disk usage
+du -sh "$PR_PROJECTS_DIR"/*
+```
+
+**Recommendation**: Clean up projects that haven't been modified in 30+ days.
+
+#### 2. Use meaningful branch names
+
+When creating a branch for a PR, use a descriptive name:
+
+```bash
+# Good branch names
+fix/desktop-slash-commands-hidden
+feat/add-model-picker
+docs/fix-python-version-requirement
+
+# Avoid vague names
+fix-issue
+my-branch
+test
+```
+
+#### 3. Keep fork in sync with upstream
+
+If you have a fork, regularly sync it with the upstream repository:
+
+```bash
+cd "$PR_PROJECTS_DIR/repo"
+
+# Add upstream remote (if not already added)
+git remote add upstream https://github.com/original-owner/repo.git
+
+# Fetch upstream
+git fetch upstream
+
+# Merge upstream changes
+git checkout main
+git merge upstream/main
+
+# Push to fork
+git push fork main
+```
+
+---
+
+### Troubleshooting
+
+#### Problem 1: Directory does not exist
+
+**Symptom**: Automation task fails with "directory not found" error.
+
+**Solution**:
+
+```bash
+mkdir -p ~/Desktop/personal-homepage/pr-projects/
+```
+
+#### Problem 2: Disk space full
+
+**Symptom**: Cannot clone new repositories.
+
+**Solution**:
+
+```bash
+# Check disk usage
+df -h ~/Desktop/personal-homepage/pr-projects/
+
+# Clean up old projects
+rm -rf ~/Desktop/personal-homepage/pr-projects/old-project/
+```
+
+#### Problem 3: Permission denied
+
+**Symptom**: Cannot write to the directory.
+
+**Solution**:
+
+```bash
+# Check permissions
+ls -la ~/Desktop/personal-homepage/ | grep pr-projects
+
+# Fix permissions
+chmod 755 ~/Desktop/personal-homepage/pr-projects/
+```
+
+---
+
+### Example: Full Workflow
+
+Here's a complete example of how the local test project directory is used:
+
+```bash
+# 1. Automation task starts
+# 2. Check if directory exists
+mkdir -p ~/Desktop/personal-homepage/pr-projects/
+
+# 3. Clone the repository
+cd ~/Desktop/personal-homepage/pr-projects/
+git clone https://github.com/NousResearch/hermes-agent.git
+
+# 4. Set up development environment
+cd hermes-agent
+npm install
+
+# 5. Create a branch
+git checkout -b fix/desktop-slash-commands-hidden
+
+# 6. Make changes
+vim apps/desktop/src/lib/desktop-slash-commands.ts
+
+# 7. Run tests
+cd apps/desktop
+npm run test
+
+# 8. Ask user to manually test
+echo "Please test the changes:"
+echo "  1. Run: cd ~/Desktop/personal-homepage/pr-projects/hermes-agent/apps/desktop"
+echo "  2. Run: npm run dev"
+echo "  3. Test /reasoning command"
+
+# 9. After user confirms, commit and push
+git add .
+git commit -m "fix: ..."
+git push fork fix/desktop-slash-commands-hidden
+
+# 10. Create PR
+gh pr create --repo NousResearch/hermes-agent --head hsms4710-pixel:fix/desktop-slash-commands-hidden
+
+# 11. Clean up (optional, after PR is merged)
+# rm -rf ~/Desktop/personal-homepage/pr-projects/hermes-agent
+```
+
+---
+
+### Notes
+
+- ✅ The directory is created automatically if it doesn't exist
+- ✅ Each project has its own subdirectory
+- ✅ You can have multiple projects in the directory at the same time
+- ✅ The directory is not tracked by Git (you can add it to `~/.gitignore` if needed)
+- ⚠️ Make sure you have enough disk space (some projects can be large)
+- ⚠️ Regularly clean up old projects to save disk space
+
+---
 
 ## Important Reminders
 
